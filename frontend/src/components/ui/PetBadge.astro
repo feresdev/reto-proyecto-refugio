@@ -1,0 +1,5 @@
+---
+interface Props { icon: string; title: string; text: string }
+const { icon, title, text } = Astro.props;
+---
+<article class="rounded-3xl bg-white p-6 shadow-[0_14px_40px_rgba(6,75,89,.08)]"><div class="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-sun-300/50 text-2xl">{icon}</div><h3 class="mb-2 text-lg font-extrabold text-teal-950">{title}</h3><p class="text-sm leading-6 text-slate-500">{text}</p></article>

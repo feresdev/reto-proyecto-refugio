@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Paleta principal azul del refugio */
+  --color-teal-950: #083b59;
+  --color-teal-900: #0a4968;
+  --color-teal-800: #125b83;
+  --color-blue-950: #083b59;
+  --color-blue-900: #0a4968;
+  --color-blue-800: #125b83;
+  --color-blue-100: #dceff7;
+  --color-blue-50: #eef8fb;
+
+  /* Amarillo de acento */
+  --color-sun-400: #ffc642;
+  --color-sun-300: #ffe08a;
+  --color-cream: #fffdf8;
+  --color-ink: #263238;
+  --color-muted: #64748b;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-sans: 'Manrope', Arial, sans-serif;
+}
+
+:root { font-family: 'Manrope', Arial, sans-serif; color: #263238; background: #fffdf8; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; }
+button, input, select { font: inherit; }
+.display-font { font-family: 'DM Serif Display', Georgia, serif; }
+.paper-grid { background-image: linear-gradient(rgba(18, 91, 131, .05) 1px, transparent 1px), linear-gradient(90deg, rgba(18, 91, 131, .05) 1px, transparent 1px); background-size: 28px 28px; }

@@ -1,0 +1,48 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Animales | Refugio">
+  <main class="min-h-screen bg-[#fffdf8]">
+    <header class="border-b border-slate-100 bg-white px-6 py-5 lg:px-12"><div class="mx-auto flex max-w-7xl items-center justify-between"><a href="/" class="flex items-center gap-2 text-sm font-extrabold text-teal-950"><span class="grid h-8 w-8 place-items-center rounded-lg bg-sun-400">✦</span> refugio</a><div class="flex items-center gap-4"><span class="hidden text-sm font-semibold text-slate-500 sm:block">Panel de administración</span><button id="logout" class="rounded-full border border-teal-900 px-4 py-2 text-xs font-extrabold uppercase text-teal-900 transition hover:bg-teal-900 hover:text-white">Salir</button></div></div></header>
+    <div class="mx-auto max-w-7xl px-6 py-12 lg:px-12">
+      <div class="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p class="text-xs font-extrabold uppercase tracking-[.2em] text-teal-800">Administración</p><h1 class="display-font mt-2 text-5xl text-teal-950">Nuestros animales</h1><p class="mt-3 text-sm text-slate-500">Gestiona los animales que esperan una nueva oportunidad.</p></div><button id="open-create" class="rounded-full bg-sun-400 px-6 py-3 text-xs font-extrabold uppercase tracking-wide text-teal-950 hover:bg-sun-300">+ Registrar animal</button></div>
+      <form id="filters" class="mb-8 grid gap-3 rounded-3xl bg-teal-950 p-5 md:grid-cols-5"><input name="nombre" placeholder="Buscar por nombre" class="rounded-xl border-0 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-sun-400" /><input name="raza" placeholder="Buscar por raza" class="rounded-xl border-0 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-sun-400" /><select name="sexo" class="rounded-xl border-0 bg-white/10 px-4 py-3 text-sm text-white outline-none"><option value="">Todos los sexos</option><option>Hembra</option><option>Macho</option></select><select name="tipoAnimal" class="rounded-xl border-0 bg-white/10 px-4 py-3 text-sm text-white outline-none"><option value="">Todos los tipos</option><option>Perro</option><option>Gato</option></select><button class="rounded-xl bg-sun-400 px-4 py-3 text-xs font-extrabold uppercase text-teal-950">Filtrar</button></form>
+      <p id="list-error" class="hidden mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"></p><div id="animals-list" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </div>
+  </main>
+  <dialog id="animal-dialog" class="w-[calc(100%-2rem)] max-w-lg rounded-[2rem] border-0 p-0 shadow-2xl backdrop:bg-teal-950/50"><form id="animal-form" class="p-8"><div class="flex items-start justify-between"><div><p class="text-xs font-extrabold uppercase tracking-[.2em] text-teal-800">Ficha</p><h2 id="form-title" class="display-font mt-1 text-4xl text-teal-950">Registrar animal</h2></div><button type="button" id="close-dialog" class="text-2xl text-slate-400">×</button></div><div class="mt-7 grid gap-4 sm:grid-cols-2"><label class="text-sm font-bold text-teal-950">Nombre<input name="nombre" required class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label><label class="text-sm font-bold text-teal-950">Raza<input name="raza" required class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label><label class="text-sm font-bold text-teal-950">Edad<input name="edad" type="number" min="0" required class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label><label class="text-sm font-bold text-teal-950">Sexo<select name="sexo" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5"><option>Hembra</option><option>Macho</option></select></label><label class="text-sm font-bold text-teal-950 sm:col-span-2">Tipo de animal<select name="tipoAnimal" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5"><option>Perro</option><option>Gato</option></select></label></div><p id="form-error" class="mt-4 hidden text-sm text-red-600"></p><button class="mt-7 w-full rounded-full bg-sun-400 px-5 py-3 text-sm font-extrabold uppercase text-teal-950">Guardar animal</button></form></dialog>
+</Layout>
+<script>
+  import { ApiError } from '../../services/api.service';
+  import { hasSession, logout } from '../../services/auth.service';
+  import { animalSchema, createAnimal, getAnimals, updateAnimal } from '../../services/animals.service';
+  import type { Animal } from '../../types/animal';
+
+  const list = document.querySelector<HTMLDivElement>('#animals-list');
+  const listError = document.querySelector<HTMLParagraphElement>('#list-error');
+  const dialog = document.querySelector<HTMLDialogElement>('#animal-dialog');
+  const form = document.querySelector<HTMLFormElement>('#animal-form');
+  const formError = document.querySelector<HTMLParagraphElement>('#form-error');
+  let editing: Animal | null = null;
+  let loadedAnimals: Animal[] = [];
+  const escapeHtml = (value: unknown) => String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] ?? character);
+
+  const render = (animals: Animal[]) => {
+    loadedAnimals = animals;
+    if (!list) return;
+    list.innerHTML = animals.length ? animals.map((animal) => `<article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-[0_10px_30px_rgba(6,75,89,.06)]"><div class="mb-4 flex items-start justify-between"><span class="rounded-full bg-teal-900/10 px-3 py-1 text-xs font-bold text-teal-900">${escapeHtml(animal.tipoAnimal)}</span><span class="text-2xl">${animal.tipoAnimal === 'Gato' ? '🐱' : '🐶'}</span></div><h3 class="text-xl font-extrabold text-teal-950">${escapeHtml(animal.nombre)}</h3><p class="mt-1 text-sm text-slate-500">${escapeHtml(animal.raza)} · ${animal.edad} ${animal.edad === 1 ? 'año' : 'años'}</p><div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-semibold text-slate-500"><span>${escapeHtml(animal.sexo)}</span><button data-edit="${animal.identificador}" class="font-extrabold text-teal-800 hover:text-sun-400">Editar</button></div></article>`).join('') : '<div class="rounded-3xl bg-white p-10 text-center text-slate-500 sm:col-span-2 lg:col-span-3">No encontramos animales con esos filtros.</div>';
+  };
+  const showError = (message: string) => { if (listError) { listError.textContent = message; listError.classList.remove('hidden'); } };
+  const load = async () => {
+    try { listError?.classList.add('hidden'); const data = new FormData(document.querySelector<HTMLFormElement>('#filters')!); render(await getAnimals(Object.fromEntries(data) as never)); }
+    catch (cause) { if (cause instanceof ApiError && cause.status === 401) window.location.href = '/login'; else showError(cause instanceof Error ? cause.message : 'No se pudo cargar la lista'); }
+  };
+  const setForm = (animal?: Animal) => { editing = animal ?? null; const title = document.querySelector('#form-title'); if (title) title.textContent = editing ? 'Editar animal' : 'Registrar animal'; if (form) { form.reset(); if (editing) Object.entries(editing).forEach(([key, value]) => { const input = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement | null; if (input) input.value = String(value); }); } formError?.classList.add('hidden'); dialog?.showModal(); };
+  document.querySelector('#filters')?.addEventListener('submit', (event) => { event.preventDefault(); void load(); });
+  document.querySelector('#open-create')?.addEventListener('click', () => setForm());
+  document.querySelector('#close-dialog')?.addEventListener('click', () => dialog?.close());
+  list?.addEventListener('click', (event) => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-edit]'); if (button) setForm(loadedAnimals.find((animal) => animal.identificador === Number(button.dataset.edit))); });
+  form?.addEventListener('submit', async (event) => { event.preventDefault(); if (!form || !formError) return; try { const input = animalSchema.parse(Object.fromEntries(new FormData(form))); if (editing) await updateAnimal(editing.identificador, input); else await createAnimal(input); dialog?.close(); await load(); } catch (cause) { formError.textContent = cause instanceof Error ? cause.message : 'No se pudo guardar el animal'; formError.classList.remove('hidden'); } });
+  document.querySelector('#logout')?.addEventListener('click', async () => { await logout(); window.location.href = '/'; });
+  if (!hasSession()) window.location.href = '/login'; else void load();
+</script>
