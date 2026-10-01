@@ -1,25 +1,31 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm --prefix backend ci && npm --prefix frontend ci",
-  "buildCommand": "npm --prefix frontend run build",
-  "outputDirectory": "frontend/dist",
-  "functions": {
-    "api/[...path].ts": {
-      "maxDuration": 30
+  "services": {
+    "backend": {
+      "root": "backend",
+      "framework": "hono",
+      "installCommand": "npm ci"
+    },
+    "frontend": {
+      "root": "frontend",
+      "framework": "astro",
+      "installCommand": "npm ci",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist"
     }
   },
   "rewrites": [
     {
-      "source": "/auth/:path*",
-      "destination": "/api/auth/:path*"
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
     },
     {
-      "source": "/animals/:path*",
-      "destination": "/api/animals/:path*"
-    },
-    {
-      "source": "/health",
-      "destination": "/api/health"
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
     }
   ]
 }
