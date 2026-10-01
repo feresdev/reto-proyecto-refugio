@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.PUBLIC_API_URL ||
-  (import.meta.env.PROD ? '/api' : 'http://localhost:3000');
+  (import.meta.env.PROD ? '' : 'http://localhost:3000');
 
 export class ApiError extends Error {
   constructor(public readonly status: number, message: string) {
